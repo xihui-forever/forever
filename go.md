@@ -386,3 +386,54 @@ if err != nil {
 
 ### Github
 
+#### vi ~/.ssh/config
+
+``` go
+Host *
+	HostkeyAlgorithms +ssh-rsa
+	PubkeyAcceptedAlgorithms +ssh-rsa
+	ConnectTimeout 5
+	Compression yes
+	ServerAliveInterval 60
+	ServerAliveCountMax 5
+	ControlMaster auto
+	ControlPersist 4h
+	ConnectTimeout 5
+Host gitlab.xxx.com
+	IdentityFile ~/.ssh/id_rsa_xxx
+```
+
+#### git config user.name luoxin
+
+
+
+
+
+### RBAC
+
+1.0
+
+- 用户表
+- 角色表【字段：access resource list - enum】
+- api表【字段：roleId、resource enum、描述说明】 --- 系统自动增删，admin查
+  - api、roleId 唯一索引
+- 用户角色表 -- admin查增删
+  - user、roleId 唯一索引
+
+2.0
+
+- 用户表（已有） 
+  - 管理员表
+  - 普通用户表
+-  角色表 （包括备注和状态字段） 
+- 用户角色关联表（用户与角色是多对多的关系） 
+- 资源表 （可操作的资源项） 
+  - 资源标识、类型、路径
+  - 类似父级资源字段，树级资源列表
+- 操作表 （操作名称、操作标识） 
+- 权限表 （资源ID、操作ID、权限标识：前端通过拼接资源+操作作为权限标识） 
+- 角色权限表 （角色与权限是多对多的关系） 
+
+可根据情况考虑加入**数据权限表**控制角色的数据访问范围
+
+3.0
