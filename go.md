@@ -407,6 +407,7 @@ Host gitlab.xxx.com
 - 用户表
 - 角色表【字段：access resource list - enum】
 - api 表【字段：roleId、resource enum、描述说明】 --- 系统自动增删，admin 查
+  
   - api、roleId 唯一索引
 - 用户角色表 -- admin 查增删
 
@@ -450,19 +451,30 @@ id=2, name='管理员'
 
 ##### 权限表
 
-| 字段名     | 类型            | 长度 | 允许 NULL | 默认值 | 键  | 说明                                      |
-| :--------- | :-------------- | :--- | :-------- | :----- | :-- | :---------------------------------------- |
-| id         | BIGINT UNSIGNED | -    | NO        | -      | PRI | 主键 ID                                   |
-| created_at | BIGINT          | -    | YES       | -      | -   | 创建时间(时间戳)                          |
-| updated_at | BIGINT          | -    | YES       | -      | -   | 更新时间(时间戳)                          |
-| deleted_at | BIGINT          | -    | YES       | -      | MUL | 软删除时间戳                              |
-| name       | VARCHAR         | 50   | NO        | -      | -   | 资源名称                                  |
-| type       | TINYINT         | -    | NO        | 0      | -   | 资源类型：1:后端，2:前端                  |
-| perm_code  | VARCHAR         | 200  | YES       | -      | -   | 前端资源路径、后端资源路径（method:path） |
-| parent_id  | BIGINT UNSIGNED | -    | YES       | 0      | MUL | 父资源 ID(0 表示顶级资源)                 |
-| state      | TINYINT         | -    | NO        | 0      | -   | 状态：0-正常, 1-禁用                      |
+| 字段名     | 类型            | 长度 | 允许 NULL | 默认值 | 键   | 说明                                      |
+| :--------- | :-------------- | :--- | :-------- | :----- | :--- | :---------------------------------------- |
+| id         | BIGINT UNSIGNED | -    | NO        | -      | PRI  | 主键 ID                                   |
+| created_at | BIGINT          | -    | YES       | -      | -    | 创建时间(时间戳)                          |
+| updated_at | BIGINT          | -    | YES       | -      | -    | 更新时间(时间戳)                          |
+| deleted_at | BIGINT          | -    | YES       | -      | MUL  | 软删除时间戳                              |
+| name       | VARCHAR         | 50   | NO        | -      | -    | 资源名称                                  |
+| type       | TINYINT         | -    | NO        | 0      | -    | 资源类型：1:后端，2:前端                  |
+| perm_code  | VARCHAR         | 200  | YES       | -      | -    | 前端资源路径、后端资源路径（method:path） |
+| parent_id  | BIGINT UNSIGNED | -    | YES       | 0      | MUL  | 父资源 ID(0 表示顶级资源)                 |
 
-id、deleted_at、resouce_id、action_id：唯一索引
+id、deleted_at、perm_code：唯一索引
+
+##### 资源映射表
+
+| 字段名          | 类型            | 长度 | 允许 NULL | 默认值 | 键   | 说明                        |
+| :-------------- | :-------------- | :--- | :-------- | :----- | :--- | :-------------------------- |
+| id              | BIGINT UNSIGNED | -    | NO        | -      | PRI  | 主键 ID                     |
+| created_at      | BIGINT          | -    | YES       | -      | -    | 创建时间(时间戳)            |
+| updated_at      | BIGINT          | -    | YES       | -      | -    | 更新时间(时间戳)            |
+| deleted_at      | BIGINT          | -    | YES       | -      | MUL  | 软删除时间戳                |
+| type            | TINYINT         | -    | NO        | 0      | -    | 资源类型：1:后端，2:前端    |
+| front_perm_code | VARCHAR         | 200  | YES       | -      | -    | 前端资源路径                |
+| back_perm_code  | VARCHAR         | 200  | YES       | 0      | -    | 后端资源路径（method:path） |
 
 ##### 角色权限表
 
@@ -477,7 +489,7 @@ id、deleted_at、resouce_id、action_id：唯一索引
 
 #### API 接口列表
 
-##### 1. 角色管理接口
+##### 角色管理接口
 
 | 接口                      | 方法 | 路径                            | 说明         |
 | :------------------------ | :--- | :------------------------------ | :----------- |
@@ -490,25 +502,16 @@ id、deleted_at、resouce_id、action_id：唯一索引
 | AdminAssignPermissionRole | POST | /api/rbac/role/AssignPermission | 分配角色权限 |
 | AdminGetPermissionRole    | POST | /api/rbac/role/GetPermission    | 获取角色权限 |
 
-##### 2. 资源管理接口
+##### 权限管理接口
 
-| 接口                 | 方法 | 路径                              | 说明         |
-| :------------------- | :--- | :-------------------------------- | :----------- |
-| AdminAddResource     | POST | /api/rbac/resource/AddResource    | 添加资源     |
-| AdminDelResource     | POST | /api/rbac/resource/DelResource    | 删除资源     |
-| AdminUpdateResource  | POST | /api/rbac/resource/UpdateResource | 更新资源     |
-| AdminListResource    | POST | /api/rbac/resource/ListResource   | 查询资源列表 |
-| AdminGetTreeResource | POST | /api/rbac/resource/GetTree        | 获取资源树   |
+| 接口                   | 方法 | 路径                                  | 说明         |
+| :--------------------- | :--- | :------------------------------------ | :----------- |
+| AdminUpdatePermission  | POST | /api/rbac/permission/UpdatePermission | 更新权限     |
+| AdminDelPermission     | POST | /api/rbac/permission/DelPermission    | 删除权限     |
+| AdminListPermission    | POST | /api/rbac/permission/ListPermission   | 查询权限列表 |
+| AdminGetTreePermission | POST | /api/rbac/permission/GetTree          | 获取权限树   |
 
-##### 3. 权限管理接口
-
-| 接口                | 方法 | 路径                                | 说明         |
-| :------------------ | :--- | :---------------------------------- | :----------- |
-| AdminAddPermission  | POST | /api/rbac/permission/AddPermission  | 添加权限     |
-| AdminDelPermission  | POST | /api/rbac/permission/DelPermission  | 删除权限     |
-| AdminListPermission | POST | /api/rbac/permission/ListPermission | 查询权限列表 |
-
-##### 4. 用户角色接口
+##### 用户角色接口
 
 | 接口                 | 方法 | 路径                           | 说明         |
 | :------------------- | :--- | :----------------------------- | :----------- |
@@ -516,7 +519,7 @@ id、deleted_at、resouce_id、action_id：唯一索引
 | AdminGetUserRole     | POST | /api/rbac/user/GetRole         | 获取用户角色 |
 | AdminGetMyPermission | POST | /api/rbac/user/GetMyPermission | 获取我的权限 |
 
----
+
 
 #### proto
 
@@ -561,90 +564,6 @@ message ModelRole {
 }
 ```
 
-##### resource
-
-```protobuf
-// @table: mysql
-// @model: 资源
-// @desc: 资源表
-message ModelResource {
-    // Type 资源类型枚举
-    // todo:暂定
-    enum Type {
-        // @desc: 模块
-        Module = 0;
-
-        // @desc: 菜单
-        Menu = 1;
-
-        // @desc: 页面
-        Page = 2;
-
-        // @desc: 按钮
-        Button = 3;
-
-        // @desc: API
-        Api = 4;
-    }
-
-    // State 资源状态枚举
-    enum State {
-        // @desc: 正常
-        Normal = 0;
-
-        // @desc: 禁用
-        Disabled = 1;
-    }
-
-    // @desc: 资源主键ID
-    // @gorm:index:idx_resource,unique
-    uint64 id = 1;
-    int64 created_at = 2;
-    int64 updated_at = 3;
-    // @gorm:index:idx_resource,unique
-    int64 deleted_at = 4;
-
-    // @desc: 资源名称
-    // @example: 管理员管理
-    // @gorm: type:varchar(50);not null
-    string name = 11;
-
-    // @desc: 资源类型
-    // @example: 1
-    // @required
-    Type type = 12;
-
-    // @desc: 前端资源路径
-    // @example: /system/admin
-    // @gorm: type:varchar(200)
-    string path = 13;
-
-    // @desc: 后端资源路径
-    // @example: /system/admin
-    // @gorm: type:varchar(200)
-    string api = 14;
-
-    // @desc: HTTP方法(仅API类型)
-    // @example: POST
-    // @gorm: type:varchar(10)
-    string method = 15;
-
-     // @desc: 父资源ID(0表示顶级资源)
-    // @example: 0
-    // @gorm: default:0
-    uint64 parent_id = 16;
-
-    // @desc: 前端组件路径
-    // @example: /views/system/admin/index.vue
-    // @gorm: type:varchar(200)
-    string component = 17;
-
-    // @desc: 状态
-    // @example: 0
-    State state = 18;
-}
-```
-
 ##### permisssion
 
 ```protobuf
@@ -652,34 +571,72 @@ message ModelResource {
 // @model: 权限
 // @desc: 权限表
 message ModelPermission {
-    // @desc: 权限主键ID
-    // @gorm:index:idx_permisssion,unique
-    uint64 id = 1;
-    int64 created_at = 2;
-    int64 updated_at = 3;
-    // @gorm:index:idx_permisssion,unique
-    int64 deleted_at = 4;
+	enum Type {
+			Nil = 0;
+			Back = 1;
+			Front = 2;
+	}
+	// @desc: 权限主键ID
+	// @gorm:index:idx_permission,unique
+	uint64 id = 1;
+	int64 created_at = 2;
+	int64 updated_at = 3;
+	// @gorm:index:idx_permission,unique
+	int64 deleted_at = 4;
 
 
-    // @desc: 权限名称
-    // @example: 管理员管理-添加
-    // @gorm: type:varchar(100);not null
-    string name = 11;
+	// @desc: 权限名称
+	// @example: 管理员管理-添加
+	// @gorm: type:varchar(100);not null
+	string name = 11;
 
-    // @desc: 资源ID
-    // @example: 1
-    // @gorm:index:idx_permisssion,unique
-    uint64 resource_id = 12;
+	// @desc: 权限类型
+	// @example: 1
+	// @required
+	Type type = 12;
 
-    // @desc: 权限描述
-    // @example: 添加管理员的权限
-    // @gorm: type:varchar(200)
-    string description = 13;
+	// @desc: 权限路径
+	// @example: post:/admin/add
+	// @gorm: type:varchar(200)
+	string perm_code = 13;
 
-    // @desc: 关联的资源信息(仅用于查询返回)
-    ModelResource resource = 20;
-    // @desc: 关联的操作信息(仅用于查询返回)
-    ModelAction action = 21;
+	// @desc: 前端父资源ID(0表示顶级资源)
+	// @example: 0
+	// @gorm: default:0
+	uint64 parent_id = 14;
+
+	// @desc: 权限描述
+	// @example: 添加管理员的权限
+	// @gorm: type:varchar(200)
+	string description = 15;
+}
+```
+
+##### 资源映射表
+
+```protobuf
+// @table: mysql
+// @model: 前后端路径关联
+// @desc: 前后端路径关联表
+message ModelFrontToBack {
+  // @desc: api主键ID
+  // @gorm:index:idx_front_back,unique
+  uint64 id = 1;
+  int64 created_at = 2;
+  int64 updated_at = 3;
+  // @gorm:index:idx_front_back,unique
+  int64 deleted_at = 4;
+
+
+  // @desc: 权限ID
+  // @example: 1
+  // @gorm: idx_front_back,unique
+  uint64 front_per_id = 11;
+
+  // @desc: 权限ID
+  // @example: 1
+  // @gorm: idx_front_back,unique
+  uint64 back_perm_id = 12;
 }
 ```
 
@@ -748,12 +705,12 @@ _参考 API 接口列表_
 
 #### 缓存更新策略
 
-| 操作           | 更新的缓存                                      |
-| :------------- | :---------------------------------------------- |
-| 分配角色给用户 | 删除用户权限缓存                                |
-| 移除用户角色   | 删除用户权限缓存                                |
-| 分配权限给角色 | 删除角色权限缓存 + 所有拥有该角色的用户权限缓存 |
-| 移除角色权限   | 删除角色权限缓存 + 所有拥有该角色的用户权限缓存 |
+| 操作           | 更新的缓存       |
+| :------------- | :--------------- |
+| 分配角色给用户 | 删除用户角色缓存 |
+| 移除用户角色   | 删除用户角色缓存 |
+| 分配权限给角色 | 删除角色权限缓存 |
+| 移除角色权限   | 删除角色权限缓存 |
 
 #### 错误码定义
 
@@ -767,3 +724,22 @@ _参考 API 接口列表_
 | ErrPermissionDuplicate | 权限重复                   |
 | ErrUserNotFound        | 用户不存在                 |
 | ErrRoleAlreadyAssigned | 角色已分配                 |
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
