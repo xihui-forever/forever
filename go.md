@@ -12,7 +12,7 @@ u3 := new(User) // == u2
 
 #### slice
 
-``` go
+```go
 var l []int          // nil
 //ll := make([]int, 0) // len(ll) == 0
 l1 := make([]int, 10)
@@ -30,7 +30,7 @@ l2[10] = 1
 
 #### map
 
-``` go
+```go
 m := make(map[int]int, 10) // 底层开发 0000000000
 /*
     len 使用的大小
@@ -84,8 +84,6 @@ for {
 }
 ```
 
-
-
 ### 锁
 
 ```go
@@ -109,8 +107,6 @@ mux.Unlock()
 */
 a.Add(1) // 原子操作
 ```
-
-
 
 #### 协程并发
 
@@ -179,8 +175,6 @@ ww := Wpg.Get().(*sync.WaitGroup)
 defer Wpg.Put(ww)
 ```
 
-
-
 #### 主动退出协程
 
 ```go
@@ -201,17 +195,15 @@ once.Do(func() {
 })
 ```
 
-#### map异步读写
+#### map 异步读写
 
-``` go
+```go
 var uniqueMap sync.Map
 uniqueMap.Range(func(key, value interface{}) bool {
     return true // 继续Range
     //return false: break range
 })
 ```
-
-
 
 ### defer close
 
@@ -229,8 +221,6 @@ defer func() {
     _ = (&os.File{}).Close()
 }()
 ```
-
-
 
 ### time
 
@@ -257,13 +247,12 @@ strconv.Itoa(10)
 strconv.Atoi("10")
 ```
 
-
-
-
 ### byte
+
 `[]rune 1`
 `[]byte 3`
-``` go
+
+```go
 b := bytes.NewBufferString("a \n b")
 bb := bufio.NewScanner(b)
 bb.Split(bufiox.ScanBy([]byte("."))) // 指定.切割
@@ -272,6 +261,7 @@ for bb.Scan() {
 	fmt.Println(bb.Text()) // 默认/n切割
 }
 ```
+
 ### uuid
 
 > github.com/google/uuid
@@ -280,23 +270,24 @@ for bb.Scan() {
 
 `json:name,omitempty yaml:name,omitempty,inline`
 
-*omitempty：为空不显示*
+_omitempty：为空不显示_
 
 **yaml**
+
 > 安全性不高且与项目相关的全局性配置
 
 `role:"admin", validator: require`
-*自定义role/不用写的validator*
-	github.com/go-playground/v
+_自定义 role/不用写的 validator_
+github.com/go-playground/v
 
 ### go build/mod
 
-`go build -v .// 展示编译过程`   
+`go build -v .// 展示编译过程`
 
 // indirect 间接引用
 
 ```go
-go mod init 
+go mod init
 
 go mod tidy // 更新
 
@@ -306,7 +297,8 @@ go get -u xxx@hash[6]/1.2.3 // 不一定有版本号
 ### 编码规范
 
 1、同类型常量放一起
-``` go
+
+```go
 type Operation int
 
 const (
@@ -317,7 +309,9 @@ const (
 
 const  EnvVar = "MY_ENV"
 ```
+
 2、减少嵌套、尽早退出
+
 ```go
 for _, v := range data {
     if v.F1 != 1 {
@@ -337,15 +331,17 @@ for _, v := range data {
 3、嵌入式类型
 
 > 嵌入式类型（例如 mutex）应位于结构体内的字段列表的顶部，并且必须有一个空行将嵌入式字段与常规字段分隔开。
-``` go
+
+```go
 type User struct {}
 
 type Person struct {
 	User // 引用类型
-	
+
 	name string
 }
 ```
+
 3、`` 避免反斜杠转义
 
 ```go
@@ -353,7 +349,9 @@ wantError := "unknown \nname:\"test\""
 wantError := `unknown
 name:"test"`
 ```
+
 4、指定字段填入/忽略零值
+
 ```go
 /*
 user := User{
@@ -369,8 +367,11 @@ user := User{
     LastName:  "Doe",
 }
 ```
-5、不能panic
+
+5、不能 panic
+
 > 业务底层逻辑 非编译错误
+
 ```go
 f, err := os.CreateTemp("", "test")
 if err != nil {
@@ -378,15 +379,11 @@ if err != nil {
     log.Error("failed to set up test")
 ```
 
-
-
-
-
 ### Github
 
 #### vi ~/.ssh/config
 
-``` go
+```go
 Host *
 	HostkeyAlgorithms +ssh-rsa
 	PubkeyAcceptedAlgorithms +ssh-rsa
@@ -403,34 +400,31 @@ Host gitlab.xxx.com
 
 #### git config user.name luoxin
 
-
-
-
-
 ### RBAC
 
 1.0
 
 - 用户表
 - 角色表【字段：access resource list - enum】
-- api表【字段：roleId、resource enum、描述说明】 --- 系统自动增删，admin查
+- api 表【字段：roleId、resource enum、描述说明】 --- 系统自动增删，admin 查
   - api、roleId 唯一索引
-- 用户角色表 -- admin查增删
+- 用户角色表 -- admin 查增删
+
   - user、roleId 唯一索引
 
-2.0
+    2.0
 
-- 用户表（已有） 
+- 用户表（已有）
   - 管理员表
   - 普通用户表
--  角色表 （包括备注和状态字段） 
-- 用户角色关联表（用户与角色是多对多的关系） 
-- 资源表 （可操作的资源项） 
+- 角色表 （包括备注和状态字段）
+- 用户角色关联表（用户与角色是多对多的关系）
+- 资源表 （可操作的资源项）
   - 资源标识、类型、路径
   - 类似父级资源字段，树级资源列表
-- 操作表 （操作名称、操作标识） 
-- 权限表 （资源ID、操作ID、权限标识：前端通过拼接资源+操作作为权限标识） 
-- 角色权限表 （角色与权限是多对多的关系） 
+- 操作表 （操作名称、操作标识）
+- 权限表 （资源 ID、操作 ID、权限标识：前端通过拼接资源+操作作为权限标识）
+- 角色权限表 （角色与权限是多对多的关系）
 
 可根据情况考虑加入**数据权限表**控制角色的数据访问范围
 
@@ -440,85 +434,45 @@ Host gitlab.xxx.com
 
 ##### 角色表
 
-|   字段名    | 类型            | 长度 | 允许NULL | 默认值 | 键   | 说明                 |
-| :---------: | :-------------- | :--- | :------- | :----- | :--- | :------------------- |
-|     id      | BIGINT UNSIGNED | -    | NO       | -      | PRI  | 主键ID               |
-| created_at  | BIGINT          | -    | YES      | -      | -    | 创建时间(时间戳)     |
-| updated_at  | BIGINT          | -    | YES      | -      | -    | 更新时间(时间戳)     |
-| deleted_at  | BIGINT          | -    | YES      | -      | MUL  | 软删除时间戳         |
-|    name     | VARCHAR         | 50   | NO       | -      | MUL  | 角色名称(唯一)       |
-| description | VARCHAR         | 200  | YES      | -      | -    | 角色描述/备注        |
-|    state    | TINYINT         | -    | NO       | 0      | -    | 状态：0-正常, 1-禁用 |
+|   字段名    | 类型            | 长度 | 允许 NULL | 默认值 | 键  | 说明                 |
+| :---------: | :-------------- | :--- | :-------- | :----- | :-- | :------------------- |
+|     id      | BIGINT UNSIGNED | -    | NO        | -      | PRI | 主键 ID              |
+| created_at  | BIGINT          | -    | YES       | -      | -   | 创建时间(时间戳)     |
+| updated_at  | BIGINT          | -    | YES       | -      | -   | 更新时间(时间戳)     |
+| deleted_at  | BIGINT          | -    | YES       | -      | MUL | 软删除时间戳         |
+|    name     | VARCHAR         | 50   | NO        | -      | MUL | 角色名称(唯一)       |
+| description | VARCHAR         | 200  | YES       | -      | -   | 角色描述/备注        |
+|    state    | TINYINT         | -    | NO        | 0      | -   | 状态：0-正常, 1-禁用 |
 
 ```
 id=2, name='管理员'
 ```
 
-##### 资源表
-
-| 字段名          | 类型            | 长度 | 允许NULL | 默认值 | 键   | 说明                                            |
-| :-------------- | :-------------- | :--- | :------- | :----- | :--- | :---------------------------------------------- |
-| id              | BIGINT UNSIGNED | -    | NO       | -      | PRI  | 主键ID                                          |
-| created_at      | BIGINT          | -    | YES      | -      | -    | 创建时间(时间戳)                                |
-| updated_at      | BIGINT          | -    | YES      | -      | -    | 更新时间(时间戳)                                |
-| deleted_at      | BIGINT          | -    | YES      | -      | MUL  | 软删除时间戳                                    |
-| name            | VARCHAR         | 50   | NO       | -      | -    | 资源名称                                        |
-| type            | TINYINT         | -    | NO       | 0      | -    | 资源类型：0-模块, 1-菜单, 2-页面, 3-按钮, 4-API |
-| path            | VARCHAR         | 200  | YES      | -      | -    | 前端资源路径：前端路由                          |
-| api             | VARCHAR         | 200  | YES      | -      | -    | 后端资源路径：API路径                           |
-| method          | VARCHAR         | 10   | YES      | -      | -    | HTTP方法(GET/POST/PUT/DELETE，仅API类型)        |
-| parent_id       | BIGINT UNSIGNED | -    | YES      | 0      | MUL  | 父资源ID(0表示顶级资源)                         |
-| component（可） | VARCHAR         | 200  | YES      | -      | -    | 前端组件路径                                    |
-| state           | TINYINT         | -    | NO       | 0      | -    | 状态：0-正常, 1-禁用                            |
-
 ##### 权限表
 
-| 字段名      | 类型            | 长度 | 允许NULL | 默认值 | 键   | 说明                              |
-| :---------- | :-------------- | :--- | :------- | :----- | :--- | :-------------------------------- |
-| id          | BIGINT UNSIGNED | -    | NO       | -      | PRI  | 主键ID                            |
-| created_at  | BIGINT          | -    | YES      | -      | -    | 创建时间(时间戳)                  |
-| updated_at  | BIGINT          | -    | YES      | -      | -    | 更新时间(时间戳)                  |
-| deleted_at  | BIGINT          | -    | YES      | -      | MUL  | 软删除时间戳                      |
-| resource_id | BIGINT UNSIGNED | -    | NO       | -      | MUL  | 资源ID                            |
-| action_id   | BIGINT UNSIGNED | -    | NO       | -      | MUL  | 操作ID                            |
-| name        | VARCHAR         | 100  | NO       | -      | -    | 权限名称(格式：资源名称-操作名称) |
-| description | VARCHAR         | 200  | YES      | -      | -    | 权限描述                          |
+| 字段名     | 类型            | 长度 | 允许 NULL | 默认值 | 键  | 说明                                      |
+| :--------- | :-------------- | :--- | :-------- | :----- | :-- | :---------------------------------------- |
+| id         | BIGINT UNSIGNED | -    | NO        | -      | PRI | 主键 ID                                   |
+| created_at | BIGINT          | -    | YES       | -      | -   | 创建时间(时间戳)                          |
+| updated_at | BIGINT          | -    | YES       | -      | -   | 更新时间(时间戳)                          |
+| deleted_at | BIGINT          | -    | YES       | -      | MUL | 软删除时间戳                              |
+| name       | VARCHAR         | 50   | NO        | -      | -   | 资源名称                                  |
+| type       | TINYINT         | -    | NO        | 0      | -   | 资源类型：1:后端，2:前端                  |
+| perm_code  | VARCHAR         | 200  | YES       | -      | -   | 前端资源路径、后端资源路径（method:path） |
+| parent_id  | BIGINT UNSIGNED | -    | YES       | 0      | MUL | 父资源 ID(0 表示顶级资源)                 |
+| state      | TINYINT         | -    | NO        | 0      | -   | 状态：0-正常, 1-禁用                      |
 
 id、deleted_at、resouce_id、action_id：唯一索引
 
-
-
 ##### 角色权限表
 
-| 字段名        | 类型            | 长度 | 允许NULL | 默认值 | 键   | 说明             |
-| :------------ | :-------------- | :--- | :------- | :----- | :--- | :--------------- |
-| id            | BIGINT UNSIGNED | -    | NO       | -      | PRI  | 主键ID           |
-| created_at    | BIGINT          | -    | YES      | -      | -    | 创建时间(时间戳) |
-| deleted_at    | BIGINT          | -    | YES      | -      | MUL  | 软删除时间戳     |
-| role_id       | BIGINT UNSIGNED | -    | NO       | -      | MUL  | 角色ID           |
-| permission_id | BIGINT UNSIGNED | -    | NO       | -      | MUL  | 权限ID           |
-
-
-
-
-
-(人员不多时可不用)
-
-##### 数据权限表
-
-| 字段名                   | 类型            | 长度 | 允许NULL | 默认值 | 键   | 说明                                         |
-| :----------------------- | :-------------- | :--- | :------- | :----- | :--- | :------------------------------------------- |
-| id                       | BIGINT UNSIGNED | -    | NO       | -      | PRI  | 主键ID                                       |
-| created_at               | BIGINT          | -    | YES      | -      | -    | 创建时间(时间戳)                             |
-| updated_at               | BIGINT          | -    | YES      | -      | -    | 更新时间(时间戳)                             |
-| role_id                  | BIGINT UNSIGNED | -    | NO       | -      | MUL  | 角色ID                                       |
-| resource_id              | BIGINT UNSIGNED | -    | NO       | -      | MUL  | 资源ID                                       |
-| scope                    | TINYINT         | -    | NO       | 0      | -    | 数据范围：0-全部, 1-本部门, 2-本人, 3-自定义 |
-| custom_condition(可不用) | VARCHAR         | 500  | YES      | -      | -    | 自定义SQL条件(scope=3时使用)                 |
-
-
-
-
+| 字段名     | 类型            | 长度 | 允许 NULL | 默认值 | 键  | 说明             |
+| :--------- | :-------------- | :--- | :-------- | :----- | :-- | :--------------- |
+| id         | BIGINT UNSIGNED | -    | NO        | -      | PRI | 主键 ID          |
+| created_at | BIGINT          | -    | YES       | -      | -   | 创建时间(时间戳) |
+| deleted_at | BIGINT          | -    | YES       | -      | MUL | 软删除时间戳     |
+| role_id    | BIGINT UNSIGNED | -    | NO        | -      | MUL | 角色 ID          |
+| perm_id    | BIGINT UNSIGNED | -    | NO        | -      | MUL | 权限 ID          |
 
 #### API 接口列表
 
@@ -561,9 +515,7 @@ id、deleted_at、resouce_id、action_id：唯一索引
 | AdminGetUserRole     | POST | /api/rbac/user/GetRole         | 获取用户角色 |
 | AdminGetMyPermission | POST | /api/rbac/user/GetMyPermission | 获取我的权限 |
 
-------
-
-
+---
 
 #### proto
 
@@ -655,7 +607,7 @@ message ModelResource {
     // @example: 管理员管理
     // @gorm: type:varchar(50);not null
     string name = 11;
-    
+
     // @desc: 资源类型
     // @example: 1
     // @required
@@ -665,7 +617,7 @@ message ModelResource {
     // @example: /system/admin
     // @gorm: type:varchar(200)
     string path = 13;
-    
+
     // @desc: 后端资源路径
     // @example: /system/admin
     // @gorm: type:varchar(200)
@@ -675,7 +627,7 @@ message ModelResource {
     // @example: POST
     // @gorm: type:varchar(10)
     string method = 15;
-    
+
      // @desc: 父资源ID(0表示顶级资源)
     // @example: 0
     // @gorm: default:0
@@ -706,8 +658,8 @@ message ModelPermission {
     int64 updated_at = 3;
     // @gorm:index:idx_permisssion,unique
     int64 deleted_at = 4;
-    
-    
+
+
     // @desc: 权限名称
     // @example: 管理员管理-添加
     // @gorm: type:varchar(100);not null
@@ -791,7 +743,7 @@ message ModelRolePermission {
 
 ##### api
 
-*参考API接口列表*
+_参考 API 接口列表_
 
 #### 缓存更新策略
 
@@ -801,8 +753,6 @@ message ModelRolePermission {
 | 移除用户角色   | 删除用户权限缓存                                |
 | 分配权限给角色 | 删除角色权限缓存 + 所有拥有该角色的用户权限缓存 |
 | 移除角色权限   | 删除角色权限缓存 + 所有拥有该角色的用户权限缓存 |
-
-
 
 #### 错误码定义
 
