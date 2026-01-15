@@ -470,6 +470,7 @@ id、deleted_at、resouce_id、action_id：唯一索引
 | :--------- | :-------------- | :--- | :-------- | :----- | :-- | :--------------- |
 | id         | BIGINT UNSIGNED | -    | NO        | -      | PRI | 主键 ID          |
 | created_at | BIGINT          | -    | YES       | -      | -   | 创建时间(时间戳) |
+| updated_at | BIGINT          | -    | YES       | -      | -   | 更新时间(时间戳) |
 | deleted_at | BIGINT          | -    | YES       | -      | MUL | 软删除时间戳     |
 | role_id    | BIGINT UNSIGNED | -    | NO        | -      | MUL | 角色 ID          |
 | perm_id    | BIGINT UNSIGNED | -    | NO        | -      | MUL | 权限 ID          |
