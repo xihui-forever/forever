@@ -257,6 +257,221 @@ flowchart TD
     style H fill:#ffcdd2
 ```
 
+### Redis 缓存清理机制
+
+Redis 提供了多种删除和清理 key 的方式，了解其底层机制对于优化性能非常重要。
+
+#### 删除命令对比
+
+```mermaid
+graph TB
+    subgraph "Redis 删除命令"
+        DEL[DEL key<br/>同步删除]
+        UNLINK[UNLINK key<br/>异步删除]
+        EXPIRE[EXPIRE key秒<br/>设置过期时间]
+        TTL[PEXPIRE key毫秒<br/>设置过期时间]
+        PERSIST[PERSIST key<br/>移除过期]
+    end
+
+    subgraph "懒删除机制"
+        LA[访问时检查]
+        LA -->|已过期| LB[删除key]
+        LA -->|未过期| LC[返回数据]
+    end
+
+    subgraph "定期删除机制"
+        SA[随机抽检]
+        SA -->|已过期| SD[删除key]
+        SA -->|未过期| SE[保留key]
+    end
+
+    style DEL fill:#ffcdd2
+    style UNLINK fill:#c8e6c9
+    style LA fill:#fff9c4
+    style SA fill:#e1f5fe
+```
+
+| 命令 | 阻塞 | 释放内存 | 适用场景 |
+|:-----|:-----|:---------|:---------|
+| **DEL** | 同步阻塞 | 立即 | 小 key，需要确认删除 |
+| **UNLINK** | 异步非阻塞 | 延迟 | 大 key，避免阻塞 |
+| **EXPIRE** | 非阻塞 | 延迟 | TTL 管理 |
+| **FLUSHDB** | 同步阻塞 | 立即 | 清空当前库 |
+| **FLUSHDB ASYNC** | 异步非阻塞 | 延迟 | 生产环境清空 |
+
+#### 过期删除机制
+
+**1. 惰性删除 (Lazy Expiration)**
+
+```mermaid
+flowchart LR
+    A[访问 key] --> B{检查过期时间}
+    B -->|已过期| C[删除 key]
+    B -->|未过期| D[返回数据]
+    C --> E[返回 nil]
+
+    style C fill:#ffcdd2
+    style D fill:#c8e6c9
+```
+
+- **工作原理**：访问 key 时检查过期时间
+- **优点**：CPU 友好，不浪费资源
+- **缺点**：过期 key 不访问会占用内存
+
+**2. 定期删除 (Active Expiration)**
+
+```mermaid
+flowchart TD
+    A[定时任务触发] --> B[随机抽取 key]
+    B --> C{检查过期}
+    C -->|已过期| D[删除 key]
+    C -->|未过期| E[保留 key]
+
+    subgraph "配置参数"
+        F[hz: 10<br/>每秒执行次数]
+        G[slave-stale-ttl: 1<br/>从节点也执行]
+        H[active-expire-effort: 1<br/>努力程度]
+    end
+
+    style D fill:#ffcdd2
+    style E fill:#c8e6c9
+```
+
+**配置参数**：
+```conf
+# redis.conf
+
+# 过期扫描频率（1-10，默认 10）
+hz 10
+
+# 每次扫描的 key 数量
+active-expire-cycle-keys 20
+
+# 每次扫描的最大删除数
+active-expire-cycle-lookups 20
+```
+
+#### 内存淘汰机制
+
+当内存达到上限时，Redis 需要淘汰部分 key：
+
+```mermaid
+flowchart TB
+    A[内存写入] --> B{maxmemory 限制?}
+    B -->|未达上限| C[直接写入]
+    B -->|达到上限| D[触发淘汰策略]
+
+    D --> E{淘汰策略}
+
+    E -->|noeviction| F[返回错误<br/>OOM]
+    E -->|allkeys-*| G[按规则淘汰]
+    E -->|volatile-*| H[淘汰设置了TTL的key]
+
+    G --> I[释放内存]
+    H --> I
+    I --> J[写入新key]
+
+    style F fill:#ffcdd2
+    style G fill:#c8e6c9
+    style I fill:#fff9c4
+```
+
+| 淘汰策略 | 说明 | 适用场景 |
+|:---------|:-----|:---------|
+| **noeviction** | 不淘汰，返回错误 | 推荐（警告应用） |
+| **allkeys-lru** | LRU 淘汰任意 key | 缓存场景 |
+| **allkeys-lfu** | LFU 淘汰任意 key | 热点数据 |
+| **allkeys-random** | 随机淘汰任意 key | 简单场景 |
+| **volatile-lru** | LRU 淘汰有 TTL 的 key | 需要设置 TTL |
+| **volatile-lfu** | LFU 淘汰有 TTL 的 key | 热点数据 + TTL |
+| **volatile-random** | 随机淘汰有 TTL 的 key | 简单场景 |
+| **volatile-ttl** | 优先淘汰快过期的 key | TTL 管理严格 |
+
+**配置示例**：
+```conf
+# 最大内存限制
+maxmemory 2gb
+
+# 淘汰策略
+maxmemory-policy allkeys-lru
+
+# LRU/LFU 配置
+maxmemory-samples 5  # 抽样数量
+```
+
+#### 大 Key 删除优化
+
+```bash
+# ❌ 阻塞删除
+DEL big_key
+
+# ✅ 异步删除
+UNLINK big_key
+
+# ✅ 分批删除 Hash 大 key
+HSCAN big_key 0 MATCH field_* COUNT 100
+HDEL big_key field1 field2 ...
+
+# ✅ 使用 Lua 脚本原子删除
+redis-cli --eval unlink_bigkeys.lua big_key
+```
+
+**Lua 脚本示例**：
+```lua
+-- unlink_bigkeys.lua
+local keys = redis.call('KEYS', ARGV[1])
+for i = 1, #keys do
+    redis.call('UNLINK', keys[i])
+end
+return #keys
+```
+
+#### 缓存清理最佳实践
+
+```go
+// 批量删除 with Pipeline
+func BatchDelete(ctx context.Context, keys []string) error {
+    pipe := rdb.Pipeline()
+
+    for _, key := range keys {
+        pipe.Unlink(ctx, key)  // 使用 UNLINK
+    }
+
+    _, err := pipe.Exec(ctx)
+    return err
+}
+
+// Scan 删除模式匹配
+func ScanDelete(ctx context.Context, pattern string) error {
+    var cursor uint64
+    for {
+        keys, next, err := rdb.Scan(ctx, cursor, pattern, 100).Result()
+        if err != nil {
+            return err
+        }
+
+        if len(keys) > 0 {
+            rdb.Unlink(ctx, keys...)
+        }
+
+        cursor = next
+        if cursor == 0 {
+            break
+        }
+    }
+    return nil
+}
+
+// 设置合理的过期时间
+func SetWithExpire(ctx context.Context, key string, value interface{}) error {
+    // 添加随机偏移，避免同时过期
+    randomOffset := rand.Intn(300)  // 0-5 分钟随机
+    ttl := 1*time.Hour + time.Duration(randomOffset)*time.Second
+
+    return rdb.Set(ctx, key, value, ttl)
+}
+```
+
 ---
 
 ## 实战案例

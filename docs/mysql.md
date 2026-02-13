@@ -304,43 +304,199 @@ WHERE b = 2 AND c = 3
 
 ### 案例 3：主从复制配置
 
-**主库配置 (my.cnf)**：
+```mermaid
+flowchart TB
+    subgraph "GTID 主从复制流程"
+        A[1. 主库配置] --> B[2. 创建复制用户]
+        B --> C[3. 备份主库数据]
+        C --> D[4. 从库配置]
+        D --> E[5. 导入备份]
+        E --> F[6. 建立复制关系]
+        F --> G[7. 验证复制状态]
+
+        style A fill:#c8e6c9
+        style F fill:#ffcdd2
+        style G fill:#fff9c4
+    end
+```
+
+**GTID (Global Transaction ID)** 概念：
+```sql
+-- GTID 格式
+source_id:transaction_id
+-- 示例
+3E11FA47-31CA-11E1-9E33-C80AA9429562:23
+
+-- source_id: 服务器的唯一标识符 (UUID)
+-- transaction_id: 已执行事务的全局递增序号
+```
+
+**一、主库配置 (Master)**
+
+1. 编辑配置文件 `/etc/my.cnf`：
 ```ini
 [mysqld]
+# 服务器唯一标识
 server-id = 1
+
+# 二进制日志配置
 log-bin = mysql-bin
 binlog_format = ROW
 binlog_row_image = FULL
+sync_binlog = 1
+expire_logs_days = 7
+
+# GTID 配置
 gtid_mode = ON
 enforce_gtid_consistency = ON
+
+# 复制过滤 (可选)
+binlog_do_db = myapp         # 只复制指定数据库
+# binlog_ignore_db = mysql   # 忽略系统库
 ```
 
-**从库配置**：
+2. 重启 MySQL：
+```bash
+systemctl restart mysqld
+```
+
+3. 创建复制用户：
+```sql
+-- 创建复制用户
+CREATE USER 'repl_user'@'%' IDENTIFIED BY 'StrongPassword123!';
+
+-- 授予复制权限
+GRANT REPLICATION SLAVE ON *.* TO 'repl_user'@'%';
+
+-- 刷新权限
+FLUSH PRIVILEGES;
+
+-- 查看主库 GTID 状态
+SHOW MASTER STATUS;
+SHOW GLOBAL VARIABLES LIKE 'gtid%';
+```
+
+**二、从库配置 (Slave)**
+
+1. 编辑配置文件 `/etc/my.cnf`：
 ```ini
 [mysqld]
+# 服务器唯一标识 (必须不同于主库)
 server-id = 2
+
+# 中继日志配置
 relay-log = relay-bin
+relay_log_purge = 1
 read_only = ON
 super_read_only = ON
+
+# GTID 配置 (必须与主库一致)
 gtid_mode = ON
 enforce_gtid_consistency = ON
+
+# 并行复制配置 (MySQL 5.7+)
+slave_parallel_workers = 4
+slave_parallel_type = LOGICAL_CLOCK
+
+# 跳过错误 (可选，生产环境慎用)
+# slave_skip_errors = 1062,1032
 ```
 
-**建立复制**：
+2. 重启 MySQL：
+```bash
+systemctl restart mysqld
+```
+
+**三、数据同步 (可选，主库已有数据时)**
+
+```bash
+# 1. 主库全量备份
+mysqldump -u root -p \
+  --single-transaction \
+  --master-data=2 \
+  --databases myapp > master_backup.sql
+
+# 2. 传输备份到从库
+scp master_backup.sql slave_server:/tmp/
+
+# 3. 从库导入备份
+mysql -u root -p < /tmp/master_backup.sql
+```
+
+**四、建立复制关系**
+
 ```sql
--- 主库创建复制用户
-CREATE USER 'repl'@'%' IDENTIFIED BY 'password';
-GRANT REPLICATION SLAVE ON *.* TO 'repl'@'%';
+-- 在从库执行
+CHANGE REPLICATION SOURCE TO
+  SOURCE_HOST='192.168.1.100',      -- 主库 IP
+  SOURCE_PORT=3306,                   -- 主库端口
+  SOURCE_USER='repl_user',             -- 复制用户
+  SOURCE_PASSWORD='StrongPassword123!',   -- 密码
+  SOURCE_AUTO_POSITION=1;              -- GTID 自动定位
 
--- 从库配置
-CHANGE MASTER TO
-  MASTER_HOST='master_ip',
-  MASTER_USER='repl',
-  MASTER_PASSWORD='password',
-  MASTER_AUTO_POSITION=1;  -- GTID 模式
+-- MySQL 8.0 之前语法
+-- CHANGE MASTER TO
+--   MASTER_HOST='192.168.1.100',
+--   MASTER_USER='repl_user',
+--   MASTER_PASSWORD='StrongPassword123!',
+--   MASTER_AUTO_POSITION=1;
 
-START SLAVE;
-SHOW SLAVE STATUS\G
+-- 启动复制
+START REPLICA;
+-- MySQL 8.0 之前: START SLAVE;
+
+-- 查看复制状态
+SHOW REPLICA STATUS\G
+-- MySQL 8.0 之前: SHOW SLAVE STATUS\G
+```
+
+**五、验证复制状态**
+
+```sql
+-- 关键字段检查
+SHOW REPLICA STATUS\G
+
+-- 关键指标说明：
+-- Replica_IO_Running: Yes     (IO 线程正常)
+-- Replica_SQL_Running: Yes    (SQL 线程正常)
+-- Seconds_Behind_Source: 0     (延迟秒数，0 表示无延迟)
+-- Last_IO_Error: (无错误)
+-- Last_SQL_Error: (无错误)
+-- Retrieved_Gtid_Set: (已接收的 GTID)
+-- Executed_Gtid_Set: (已执行的 GTID)
+```
+
+**六、主从复制监控**
+
+```sql
+-- 主库查看 Binlog 信息
+SHOW BINARY LOGS;
+SHOW MASTER STATUS;
+
+-- 从库查看复制的 GTID
+SELECT * FROM performance_schema.replication_connection_status;
+SELECT * FROM performance_schema.replication_applier_status;
+
+-- 手动跳过复制错误 (仅紧急情况)
+-- STOP REPLICA;
+-- SET GLOBAL sql_slave_skip_counter = 1;
+-- START REPLICA;
+```
+
+**七、故障切换演练**
+
+```bash
+# 1. 停止主库
+systemctl stop mysqld@primary
+
+# 2. 将从库提升为主库
+mysql -u root -p -e "STOP REPLICA; RESET REPLICA ALL;"
+mysql -u root -p -e "SET GLOBAL read_only = OFF; SET GLOBAL super_read_only = OFF;"
+
+# 3. 应用切换连接到新主库
+# 更新应用配置的主库地址
+
+# 4. 修复原主库后，将其配置为新从库
 ```
 
 ### 案例 4：分库分表策略
