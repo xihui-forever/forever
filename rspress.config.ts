@@ -1,4 +1,5 @@
 import { defineConfig } from 'rspress/config';
+import mermaid from 'rspress-plugin-mermaid';
 
 export default defineConfig({
   base: '/forever/',
@@ -265,4 +266,11 @@ export default defineConfig({
     // 支持代码块语法高亮
     codeHighlighter: 'shiki',
   },
+  plugins:[
+    mermaid({
+      mermaidConfig: {
+        theme: 'forest',
+      },
+    }),
+  ]
 });

@@ -17,5 +17,8 @@
   "packageManager": "pnpm@10.22.0",
   "devDependencies": {
     "rspress": "^1.47.1"
+  },
+  "dependencies": {
+    "rspress-plugin-mermaid": "^1.0.1"
   }
 }

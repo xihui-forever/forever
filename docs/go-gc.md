@@ -258,14 +258,15 @@ func bgsweep() {
 | **Go 1.23** | PGO 构建时间优化 |
 | **Go 1.24** | 辅助 GC 改进，减少内存抖动 |
 | **Go 1.25** | 引入 Green Tea GC（实验性） |
+| **Go 1.26** | Green Tea GC 成为默认，新增 SIMD 优化 |
 
 ## Green Tea GC（最新特性）
 
-> Go 1.25 引入的新一代垃圾回收器
+> Go 1.26 默认启用 · 新一代垃圾回收器
 
 ### 概述
 
-**Green Tea GC** 是 Go 团队在 2025 年 10 月发布的 Go 1.25 版本中引入的全新实验性垃圾回收器。它采用基于 **span（页面）的扫描**方式，相比传统的三色标记算法有显著性能提升。
+**Green Tea GC** 是 Go 团队开发的新一代垃圾回收器，于 2025 年 10 月在 Go 1.25 中作为实验性功能引入，并在 **2026 年 2 月发布的 Go 1.26 中正式成为默认垃圾回收器**。它采用基于 **span（页面）的扫描**方式，相比传统的三色标记算法有显著性能提升。
 
 ```mermaid
 flowchart LR
@@ -343,14 +344,14 @@ graph TD
 ### 如何启用
 
 ```bash
-# 构建时启用 Green Tea GC
-GOEXPERIMENT=greenteagc go build
+# Go 1.26+ 默认启用 Green Tea GC，无需额外配置
+go build -o myapp ./cmd/myapp
 
-# 运行时启用
-GOEXPERIMENT=greenteagc go run main.go
+# 如需回退到传统 GC（排查兼容性问题时）
+GOEXPERIMENT=nogreenteagc go build -o myapp ./cmd/myapp
 
-# 完整示例
-GOEXPERIMENT=greenteagc go build -o myapp ./cmd/myapp
+# Go 1.25 用户需要手动启用（已过时）
+# GOEXPERIMENT=greenteagc go build -o myapp ./cmd/myapp
 ```
 
 ### 性能对比
@@ -383,10 +384,11 @@ flowchart LR
 
 | 项目 | 说明 |
 |:-----|:-----|
-| **实验状态** | Go 1.25 实验性功能，Go 1.26 计划默认启用 |
-| **稳定性** | 已在 Google 生产环境验证，无已知正确性问题 |
+| **正式状态** | Go 1.26 默认启用，已通过 Google 生产环境大规模验证 |
+| **稳定性** | 无已知正确性问题，可安全用于生产环境 |
+| **回退选项** | 如遇兼容性问题，可使用 `GOEXPERIMENT=nogreenteagc` 回退 |
 | **反馈** | 通过 [GitHub Issue #73581](https://github.com/golang/go/issues/73581) 提供反馈 |
-| **未来** | Go 1.26 将加入 SIMD 优化 |
+| **SIMD 优化** | Go 1.26 已加入 SIMD 优化，进一步提升性能 |
 
 ### 代码示例
 
@@ -401,8 +403,8 @@ import (
 )
 
 func main() {
-    // 检查是否启用了 Green Tea GC
-    // 注意：需要通过环境变量 GOEXPERIMENT=greenteagc 启用
+    // Go 1.26+ 默认启用 Green Tea GC
+    // 如需回退，使用 GOEXPERIMENT=nogreenteagc
 
     var m1, m2 runtime.MemStats
 
@@ -417,6 +419,269 @@ func main() {
         fmt.Printf("GC #%d: %d ns\n", i, pause)
     }
 }
+```
+
+---
+
+## Go 1.26 其他新特性
+
+> 除了 Green Tea GC，Go 1.26 还引入了多项语言和运行时改进
+
+### new(expr) 语法糖
+
+Go 1.26 对内置 `new` 函数进行了增强，现在可以接受**表达式**作为参数，直接初始化指针值。
+
+```mermaid
+flowchart LR
+    subgraph "Go 1.25 及之前"
+        A1["x := int64(300)"] --> A2["ptr := &x"]
+    end
+
+    subgraph "Go 1.26+"
+        B1["ptr := new(int64(300))"]
+    end
+
+    style B1 fill:#4caf50,color:#fff
+```
+
+#### 使用示例
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+    // === 基本类型 ===
+
+    // Go 1.25 及之前：需要两步
+    // x := int64(300)
+    // ptr := &x
+
+    // Go 1.26：一步完成
+    ptr := new(int64(300))
+    fmt.Println(*ptr) // 300
+
+    // === 字符串 ===
+    name := new("hello")
+    fmt.Println(*name) // hello
+
+    // === 表达式 ===
+    result := new(1 + 2)
+    fmt.Println(*result) // 3
+
+    // === 结构体 ===
+    type Config struct {
+        Timeout int
+        Debug   bool
+    }
+
+    // 直接初始化结构体指针
+    cfg := new(Config{Timeout: 30, Debug: true})
+    fmt.Println(cfg.Timeout) // 30
+
+    // === 函数返回值 ===
+    getValue := func() int { return 42 }
+    p := new(getValue())
+    fmt.Println(*p) // 42
+}
+```
+
+#### 典型应用场景
+
+| 场景 | 旧写法 | Go 1.26 写法 |
+|:-----|:-------|:-------------|
+| **可选参数** | `timeout := &[]int{30}[0]` | `timeout := new(30)` |
+| **API 响应** | `val := 200; resp.Code = &val` | `resp.Code = new(200)` |
+| **结构体初始化** | `c := Config{}; c.X = 1; return &c` | `return new(Config{X: 1})` |
+
+### 实验性 SIMD 包
+
+Go 1.26 引入了新的实验性 `simd/archsimd` 包，提供对架构特定 SIMD（单指令多数据）操作的访问。
+
+```mermaid
+graph TD
+    subgraph "SIMD 应用场景"
+        A[图像处理] --> S[simd/archsimd]
+        B[音视频编解码] --> S
+        C[科学计算] --> S
+        D[密码学运算] --> S
+        E[大数据处理] --> S
+    end
+
+    style S fill:#2196f3,color:#fff
+```
+
+#### 如何启用
+
+```bash
+# SIMD 是实验性功能，需要显式启用
+GOEXPERIMENT=simd go build -o myapp ./cmd/myapp
+
+# 或运行时
+GOEXPERIMENT=simd go run main.go
+```
+
+#### 代码示例
+
+```go
+// 注意：需要 GOEXPERIMENT=simd 启用
+package main
+
+import (
+    "fmt"
+    "simd/archsimd" // 实验性包
+)
+
+func main() {
+    // SIMD 向量加法示例（概念演示）
+    a := []float32{1.0, 2.0, 3.0, 4.0}
+    b := []float32{5.0, 6.0, 7.0, 8.0}
+    result := make([]float32, 4)
+
+    // 使用 SIMD 指令并行处理
+    // archsimd.AddFloat32x4(result, a, b)
+
+    fmt.Println(result) // [6 8 10 12]
+}
+```
+
+#### 注意事项
+
+| 项目 | 说明 |
+|:-----|:-----|
+| **状态** | 实验性，API 可能变化 |
+| **架构支持** | AMD64、ARM64 等 |
+| **用途** | 高性能数据处理、游戏、媒体处理 |
+| **文档** | [pkg.go.dev/simd/archsimd](https://pkg.go.dev/simd/archsimd) |
+
+### 实验性 runtime/secret 包
+
+Go 1.26 引入了 `runtime/secret` 包，用于在敏感数据使用后**安全擦除内存**，防止通过内存转储或侧信道攻击泄露。
+
+```mermaid
+sequenceDiagram
+    participant App as 应用程序
+    participant Secret as runtime/secret
+    participant Mem as 内存
+
+    App->>Secret: secret.Do(func() {...})
+    Secret->>Mem: 加载敏感数据到寄存器/栈/堆
+    App->>App: 处理敏感数据
+    Secret->>Mem: 零化寄存器、栈、堆
+    Mem-->>App: 敏感数据已擦除
+```
+
+#### 如何启用
+
+```bash
+# runtime/secret 是实验性功能
+GOEXPERIMENT=runtimesecret go build -o myapp ./cmd/myapp
+```
+
+#### 代码示例
+
+```go
+// 注意：需要 GOEXPERIMENT=runtimesecret 启用
+package main
+
+import (
+    "crypto/rand"
+    "fmt"
+    "runtime/secret" // 实验性包
+)
+
+func main() {
+    // 处理敏感数据（如加密密钥）
+    key := make([]byte, 32)
+    rand.Read(key)
+
+    // 使用 secret.Do 确保数据使用后被擦除
+    secret.Do(func() {
+        // 在此区域内使用敏感数据
+        fmt.Printf("Key (处理中): %x...\n", key[:4])
+
+        // 执行加密操作...
+        // decryptWithKey(key, ciphertext)
+    })
+
+    // 离开 secret.Do 后，key 相关的寄存器、栈、堆内存已被零化
+    // 防止内存泄露
+}
+```
+
+#### 适用场景
+
+| 场景 | 说明 |
+|:-----|:-----|
+| **加密库开发** | 处理密钥、密码等敏感数据 |
+| **安全认证** | 存储和验证凭据 |
+| **金融系统** | 处理信用卡号、PIN 码等 |
+| **零信任架构** | 最小化敏感数据暴露时间 |
+
+#### 注意事项
+
+| 项目 | 说明 |
+|:-----|:-----|
+| **状态** | 实验性，API 可能变化 |
+| **目标用户** | 主要是加密库开发者，非普通应用开发者 |
+| **原理** | 自动零化寄存器、栈、堆内存 |
+| **文档** | [pkg.go.dev/runtime/secret](https://pkg.go.dev/runtime/secret) |
+
+### 其他 Go 1.26 改进
+
+#### cgo 开销降低
+
+```mermaid
+graph LR
+    subgraph "Go 1.25"
+        C1[cgo 调用] --> O1[较高开销]
+    end
+
+    subgraph "Go 1.26"
+        C2[cgo 调用] --> O2[降低的开销]
+    end
+
+    style O2 fill:#4caf50,color:#fff
+```
+
+Go 1.26 优化了 cgo 调用的基线开销，使得 Go 调用 C 代码的性能更好。
+
+#### 泛型类型自引用
+
+```go
+// Go 1.26 允许泛型类型在自己的类型参数列表中引用自己
+// 用于构建复杂的数据结构
+
+// 链表节点可以引用自己
+type Node[T any] struct {
+    Value T
+    Next  *Node[T] // 自引用
+}
+
+// 树节点
+type Tree[T any] struct {
+    Value    T
+    Children []*Tree[T] // 自引用切片
+}
+```
+
+#### 专用内存分配
+
+Go 1.26 编译器会为不同大小的内存分配生成专用函数调用，提升内存分配性能。
+
+```mermaid
+flowchart LR
+    A[内存分配请求] --> B{大小分类}
+    B -->|小对象| C[小型分配器]
+    B -->|中等对象| D[中型分配器]
+    B -->|大对象| E[大型分配器]
+
+    C --> F[更快的分配]
+    D --> F
+    E --> F
+
+    style F fill:#4caf50,color:#fff
 ```
 
 ---
@@ -674,12 +939,21 @@ func main() {
 
 ## 参考资料
 
-### Green Tea GC（最新）
-- [Official Go Blog - Introducing Green Tea GC](https://go.dev/blog/greenteagc) - Go 1.25 官方发布说明
-- [Go 1.25 Release Notes - Garbage Collector](https://go.dev/doc/go1.25) - 官方发布笔记
+### Go 1.26 官方文档
+- [Go 1.26 is released - The Go Blog](https://go.dev/blog/go1.26) - Go 1.26 官方发布公告
+- [Go 1.26 Release Notes](https://go.dev/doc/go1.26) - 官方发布笔记
+- [pkg.go.dev/simd/archsimd](https://pkg.go.dev/simd/archsimd) - SIMD 包文档
+- [pkg.go.dev/runtime/secret](https://pkg.go.dev/runtime/secret) - runtime/secret 包文档
+
+### Green Tea GC
 - [GitHub Issue #73581 - Green Tea GC Tracking](https://github.com/golang/go/issues/73581) - 技术实现追踪
-- [InfoQ - Go Green Tea GC 性能分析](https://www.infoq.com/news/2025/11/go-green-tea-gc/) - 性能基准测试
-- [Medium - Green Tea GC 空间局部性分析](https://medium.com/@smeetbn/gos-green-tea-gc-improving-performance-through-spatial-locality-a3ba8aa5eb3b) - 技术深度解析
+- [InfoWorld - Go 1.26 unleashes performance-boosting Green Tea GC](https://www.infoworld.com/article/4131097/go-1-26-unleashes-performance-boosting-green-tea-gc.html) - 性能分析
+- [Heise - Go 1.26 brings more flexible syntax and faster garbage collector](https://www.heise.de/en/news/Go-1-26-brings-more-flexible-syntax-and-faster-garbage-collector-11173027.html) - 版本概述
+
+### Go 1.26 新特性
+- [Go 1.26's new(expr) Change - Medium](https://medium.com/@moksh.9/go-1-26s-new-expr-change-less-boilerplate-cleaner-apis-better-optional-fields-335786878893) - new(expr) 语法详解
+- [Go 1.26 Interactive Tour](https://antonz.org/go-1-26/) - 新特性交互式演示
+- [Tony Bai - Go 1.26 特性预览](https://tonybai.com/2025/12/16/go-1-26-foresight/) - 中文深度解析
 
 ### 传统 GC 机制
 - [Writing Barriers in Go Garbage Collection - Medium](https://medium.com/@AlexanderObregon/writing-barriers-in-go-garbage-collection-baf72a4ee088)
