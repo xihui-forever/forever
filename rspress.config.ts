@@ -8,7 +8,7 @@ export default defineConfig({
 
   // 主题配置
   themeConfig: {
-    // 导航栏
+    // 导航栏（一级目录，保持不变）
     nav: [
       { text: '首页', link: '/' },
       { text: 'Go 语言', link: '/go-basics' },
@@ -17,8 +17,9 @@ export default defineConfig({
       { text: '架构', link: '/microservices' },
     ],
 
-    // 侧边栏
+    // 侧边栏（根据路径显示对应二级目录）
     sidebar: {
+      // 首页
       '/': [
         {
           text: '开始',
@@ -29,6 +30,10 @@ export default defineConfig({
             },
           ],
         },
+      ],
+
+      // Go 语言相关页面
+      '/go-basics': [
         {
           text: 'Go 语言核心',
           items: [
@@ -46,6 +51,48 @@ export default defineConfig({
             },
           ],
         },
+      ],
+      '/go-concurrency': [
+        {
+          text: 'Go 语言核心',
+          items: [
+            {
+              text: 'Go 基础',
+              link: '/go-basics',
+            },
+            {
+              text: 'Go 并发底层',
+              link: '/go-concurrency',
+            },
+            {
+              text: 'Go GC',
+              link: '/go-gc',
+            },
+          ],
+        },
+      ],
+      '/go-gc': [
+        {
+          text: 'Go 语言核心',
+          items: [
+            {
+              text: 'Go 基础',
+              link: '/go-basics',
+            },
+            {
+              text: 'Go 并发底层',
+              link: '/go-concurrency',
+            },
+            {
+              text: 'Go GC',
+              link: '/go-gc',
+            },
+          ],
+        },
+      ],
+
+      // 数据库相关页面
+      '/mysql': [
         {
           text: '数据库',
           items: [
@@ -63,6 +110,48 @@ export default defineConfig({
             },
           ],
         },
+      ],
+      '/redis': [
+        {
+          text: '数据库',
+          items: [
+            {
+              text: 'MySQL 深度',
+              link: '/mysql',
+            },
+            {
+              text: 'Redis 高级',
+              link: '/redis',
+            },
+            {
+              text: 'MongoDB',
+              link: '/mongo',
+            },
+          ],
+        },
+      ],
+      '/mongo': [
+        {
+          text: '数据库',
+          items: [
+            {
+              text: 'MySQL 深度',
+              link: '/mysql',
+            },
+            {
+              text: 'Redis 高级',
+              link: '/redis',
+            },
+            {
+              text: 'MongoDB',
+              link: '/mongo',
+            },
+          ],
+        },
+      ],
+
+      // 前端技术
+      '/js-promise': [
         {
           text: '前端技术',
           items: [
@@ -72,6 +161,10 @@ export default defineConfig({
             },
           ],
         },
+      ],
+
+      // 系统设计
+      '/system-design': [
         {
           text: '系统设计',
           items: [
@@ -81,6 +174,10 @@ export default defineConfig({
             },
           ],
         },
+      ],
+
+      // 消息队列
+      '/kafka': [
         {
           text: '消息队列',
           items: [
@@ -90,6 +187,10 @@ export default defineConfig({
             },
           ],
         },
+      ],
+
+      // 架构与部署
+      '/microservices': [
         {
           text: '架构与部署',
           items: [
@@ -103,6 +204,40 @@ export default defineConfig({
             },
           ],
         },
+      ],
+      '/docker-cicd': [
+        {
+          text: '架构与部署',
+          items: [
+            {
+              text: '微服务架构',
+              link: '/microservices',
+            },
+            {
+              text: 'Docker & CI/CD',
+              link: '/docker-cicd',
+            },
+          ],
+        },
+      ],
+
+      // 网络与工具
+      '/network': [
+        {
+          text: '网络与工具',
+          items: [
+            {
+              text: '网络协议',
+              link: '/network',
+            },
+            {
+              text: 'ELK 技术栈',
+              link: '/elk',
+            },
+          ],
+        },
+      ],
+      '/elk': [
         {
           text: '网络与工具',
           items: [
