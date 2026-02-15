@@ -265,6 +265,8 @@ export default defineConfig({
   markdown: {
     // 支持代码块语法高亮
     codeHighlighter: 'shiki',
+    // 需要禁用 mdxRs 以便使用 remark 插件（包括 mermaid）
+    mdxRs: false,
   },
   plugins:[
     mermaid({
