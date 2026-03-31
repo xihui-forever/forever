@@ -50,6 +50,10 @@ export default defineConfig({
               text: 'Go GC',
               link: '/go-gc',
             },
+            {
+              text: 'Go Context',
+              link: '/go-context',
+            },
           ],
         },
       ],
@@ -69,6 +73,10 @@ export default defineConfig({
               text: 'Go GC',
               link: '/go-gc',
             },
+            {
+              text: 'Go Context',
+              link: '/go-context',
+            },
           ],
         },
       ],
@@ -87,6 +95,33 @@ export default defineConfig({
             {
               text: 'Go GC',
               link: '/go-gc',
+            },
+            {
+              text: 'Go Context',
+              link: '/go-context',
+            },
+          ],
+        },
+      ],
+      '/go-context': [
+        {
+          text: 'Go 语言核心',
+          items: [
+            {
+              text: 'Go 基础',
+              link: '/go-basics',
+            },
+            {
+              text: 'Go 并发底层',
+              link: '/go-concurrency',
+            },
+            {
+              text: 'Go GC',
+              link: '/go-gc',
+            },
+            {
+              text: 'Go Context',
+              link: '/go-context',
             },
           ],
         },
