@@ -16,6 +16,8 @@ export default defineConfig({
             {text: '数据库', link: '/mysql'},
             {text: '系统设计', link: '/system-design'},
             {text: '架构', link: '/microservices'},
+            {text: '消息队列', link: '/kafka'},
+            {text: '网络', link: '/network'},
         ],
 
         // 侧边栏（根据路径显示对应二级目录）
