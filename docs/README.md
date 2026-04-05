@@ -13,6 +13,7 @@
 | [Go 基础](./go-basics.md) | 基础类型、编码规范、RBAC 权限设计 | ✅ |
 | [Go 并发底层](./go-concurrency.md) | GMP 模型、Channel 原理、调度器 | 🚧 |
 | [Go GC](./go-gc.md) | 垃圾回收机制、三色标记、写屏障 | 🚧 |
+| [Go 网络请求处理](./go-net-http.md) | HTTP 客户端/服务器、响应码详解、高级应用 | ✅ |
 
 ### 数据库
 
