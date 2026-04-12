@@ -314,6 +314,7 @@ export default defineConfig({
                     ],
                 },
             ],
+            // AI 技术体系
             '/ai-embedding-retrieval': [
                 {
                     text: 'AI 技术体系',
@@ -321,6 +322,18 @@ export default defineConfig({
                         {
                             text: 'AI 向量检索',
                             link: '/ai-embedding-retrieval',
+                        },
+                        {
+                            text: 'MCP 与 Skills',
+                            link: '/ai-mcp-skills',
+                        },
+                        {
+                            text: 'AI Agent',
+                            link: '/ai-agent',
+                        },
+                        {
+                            text: 'AI 网关',
+                            link: '/ai-gateway',
                         },
                     ],
                 },
@@ -330,8 +343,20 @@ export default defineConfig({
                     text: 'AI 技术体系',
                     items: [
                         {
+                            text: 'AI 向量检索',
+                            link: '/ai-embedding-retrieval',
+                        },
+                        {
                             text: 'MCP 与 Skills',
                             link: '/ai-mcp-skills',
+                        },
+                        {
+                            text: 'AI Agent',
+                            link: '/ai-agent',
+                        },
+                        {
+                            text: 'AI 网关',
+                            link: '/ai-gateway',
                         },
                     ],
                 },
@@ -341,8 +366,20 @@ export default defineConfig({
                     text: 'AI 技术体系',
                     items: [
                         {
+                            text: 'AI 向量检索',
+                            link: '/ai-embedding-retrieval',
+                        },
+                        {
+                            text: 'MCP 与 Skills',
+                            link: '/ai-mcp-skills',
+                        },
+                        {
                             text: 'AI Agent',
                             link: '/ai-agent',
+                        },
+                        {
+                            text: 'AI 网关',
+                            link: '/ai-gateway',
                         },
                     ],
                 },
@@ -352,13 +389,25 @@ export default defineConfig({
                     text: 'AI 技术体系',
                     items: [
                         {
+                            text: 'AI 向量检索',
+                            link: '/ai-embedding-retrieval',
+                        },
+                        {
+                            text: 'MCP 与 Skills',
+                            link: '/ai-mcp-skills',
+                        },
+                        {
+                            text: 'AI Agent',
+                            link: '/ai-agent',
+                        },
+                        {
                             text: 'AI 网关',
                             link: '/ai-gateway',
                         },
                     ],
                 },
             ],
-                   },
+        },
 
         // 页脚
         footer: {
