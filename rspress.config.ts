@@ -18,6 +18,7 @@ export default defineConfig({
             {text: '架构', link: '/microservices'},
             {text: '消息队列', link: '/kafka'},
             {text: '网络', link: '/network'},
+            {text: 'AI', link: '/ai-embedding-retrieval'},
         ],
 
         // 侧边栏（根据路径显示对应二级目录）
@@ -312,8 +313,52 @@ export default defineConfig({
                         }
                     ],
                 },
-            ]
-        },
+            ],
+            '/ai-embedding-retrieval': [
+                {
+                    text: 'AI 技术体系',
+                    items: [
+                        {
+                            text: 'AI 向量检索',
+                            link: '/ai-embedding-retrieval',
+                        },
+                    ],
+                },
+            ],
+            '/ai-mcp-skills': [
+                {
+                    text: 'AI 技术体系',
+                    items: [
+                        {
+                            text: 'MCP 与 Skills',
+                            link: '/ai-mcp-skills',
+                        },
+                    ],
+                },
+            ],
+            '/ai-agent': [
+                {
+                    text: 'AI 技术体系',
+                    items: [
+                        {
+                            text: 'AI Agent',
+                            link: '/ai-agent',
+                        },
+                    ],
+                },
+            ],
+            '/ai-gateway': [
+                {
+                    text: 'AI 技术体系',
+                    items: [
+                        {
+                            text: 'AI 网关',
+                            link: '/ai-gateway',
+                        },
+                    ],
+                },
+            ],
+                   },
 
         // 页脚
         footer: {
