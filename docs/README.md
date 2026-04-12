@@ -55,6 +55,15 @@
 | [网络协议](./network.md) | HTTP/HTTPS 发展、TCP/IP、WebSocket | 🚧 |
 | [ELK 技术栈](./elk.md) | Elasticsearch、Logstash、Kibana | 🚧 |
 
+### AI 技术体系
+
+| 模块 | 描述 | 状态 |
+|:-----|:-----|:-----:|
+| [AI 向量检索](./ai-embedding-retrieval.md) | 向量嵌入、相似度计算、向量数据库、RAG 架构 | ✅ |
+| [MCP 与 Skills](./ai-mcp-skills.md) | Model Context Protocol、Agent Skills、工具调用 | ✅ |
+| [AI Agent](./ai-agent.md) | 自主代理、工具调用、多 Agent 协作、规划与执行 | ✅ |
+| [AI 网关](./ai-gateway.md) | AI 专用网关、Prompt 管理、Token 计费、流量控制 | ✅ |
+
 ---
 
 ## 🗂️ 每个模块的内容结构
